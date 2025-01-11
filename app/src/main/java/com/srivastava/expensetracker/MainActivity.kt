@@ -3,9 +3,14 @@ package com.srivastava.expensetracker
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 
 class MainActivity : AppCompatActivity() {
@@ -16,8 +21,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         FirebaseApp.initializeApp(this)
-        auth =  FirebaseAuth.getInstance();
-        btnCheckAuth = findViewById(R.id.btnCheckAuth)
+        //auth =  FirebaseAuth.getInstance();
+       /* btnCheckAuth = findViewById(R.id.btnCheckAuth)
 
         btnCheckAuth.setOnClickListener{
             val currentUser = auth.currentUser
@@ -27,11 +32,24 @@ class MainActivity : AppCompatActivity() {
             else{
                 startActivity(Intent(this,SignInActivity::class.java))
             }
-        }
+        }*/
 
+        //initialize firebase databse system
+        val database = FirebaseDatabase.getInstance()
+        val myRef = database.getReference("message")
 
+        //write the value to the "message' node
+        myRef.setValue("Hello, world")
 
-
-
+        // Add listener to read the value od "message"
+        myRef.addValueEventListener(object : ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+               val value = snapshot.getValue(String :: class.java) //Read the value
+               Log.d("Firebase", "Value is $value")
+            }
+            override fun onCancelled(error: DatabaseError) {
+               Log.d("Firebase","Failed to read value",error.toException())
+            }
+        })
     }
 }
