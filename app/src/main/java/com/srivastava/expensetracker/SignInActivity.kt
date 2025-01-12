@@ -1,3 +1,5 @@
+/*
+
 package com.srivastava.expensetracker
 
 import android.content.Intent
@@ -39,9 +41,7 @@ class SignInActivity : AppCompatActivity() {
     }
 
     private fun signIn(email : String, password : String){
-        //uses firebase authentication to attempt to sign in the user
         auth.signInWithEmailAndPassword(email, password)
-            //this trigeered when signin attempts is complete
             .addOnCompleteListener(this){task ->
                 if(task.isSuccessful){
                     startActivity(Intent(this,ExpenseActivity :: class.java))
@@ -53,3 +53,4 @@ class SignInActivity : AppCompatActivity() {
 
     }
 }
+*/

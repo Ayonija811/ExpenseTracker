@@ -1,3 +1,4 @@
+/*
 package com.srivastava.expensetracker
 
 import android.content.Intent
@@ -49,4 +50,4 @@ class SignUpActivity : AppCompatActivity() {
                 }
             }
     }
-}
+}*/
