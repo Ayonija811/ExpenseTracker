@@ -66,8 +66,7 @@ class ExpenseActivity : AppCompatActivity() {
             rentEditText.text.clear()
             travelEditText.text.clear()
             miscellaneousEditText.text.clear()
-        }*/
-
+        }*///
         // with viewmodel
         viewModel = ViewModelProvider(this).get(ExpenseViewModel ::class.java)
 
