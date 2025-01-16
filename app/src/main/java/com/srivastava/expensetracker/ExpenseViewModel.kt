@@ -1,30 +1,72 @@
 package com.srivastava.expensetracker
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import android.widget.Toast
+import androidx.lifecycle.*
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-class ExpenseViewModel : ViewModel() {
-    val expenseDb = FirebaseDatabase.getInstance()
-    //create mutable variables
-    private val _totalExpense = MutableLiveData<String>()
-    //set ui data using livedata
-    val expenseValue : LiveData<String> get() = _totalExpense
-    //create update function to update mutable variables
-    fun updateExpense(totalExpense : String){
-        _totalExpense.value = expenseDb.getReference("TotalExpense").toString()
+class ExpenseViewModel(application: Application) : AndroidViewModel(application) {
+    //Define DB object
+    private val expenseDao : TotalExpenseDao = TotalExpenseDB.getDatabase(application).totalExpenseDao()
+    private val expenseFireDb = FirebaseDatabase.getInstance()
+
+    private val _totalExpense = MutableLiveData<Double>()
+    val expenseValue : LiveData<Double> get() = _totalExpense
+
+    init{
+        //Create a check to ensure localDb and FirebaseDB data is consistent.
+        fetchTotalExpense()
     }
 
-    // set value to firebase
-    fun serverDbUpdate(entertainmentValue : String, foodValue : String, rentValue : String, travelValue : String, miscellaneousValue : String){
-        expenseDb.getReference("Entertainment").setValue(entertainmentValue)
-        expenseDb.getReference("Food").setValue(foodValue)
-        expenseDb.getReference("Rent").setValue(rentValue)
-        expenseDb.getReference("Travel").setValue(travelValue)
-        expenseDb.getReference("MiscellaneousExpense").setValue(miscellaneousValue)
+    private fun fetchTotalExpense() {
+       viewModelScope.launch(Dispatchers.IO){
+           val totalExpenseRoom = expenseDao.getTotalExpense()
+           val totalExpenseFire = expenseFireDb.getReference("TotalExpense")
 
-        val totalExpense = entertainmentValue.toDouble() + foodValue.toDouble() + rentValue.toDouble() + travelValue.toDouble() + miscellaneousValue.toDouble()
-        _totalExpense.value = totalExpense.toString()
+           totalExpenseFire.addValueEventListener(object : ValueEventListener{
+               override fun onDataChange(snapshot: DataSnapshot) {
+                  val totalExpenseFireBase = snapshot.getValue(Double :: class.java)
+                   if(totalExpenseFireBase == totalExpenseRoom){
+                       _totalExpense.postValue(totalExpenseRoom?: 0.0)
+                   }
+               }
+               override fun onCancelled(error: DatabaseError) {
+               }
+           })
+
+         /*  val expense = Expenses(totalExpense = totalExpenseRoom ?: 0.0)
+           expenseDao.insertTotalExpense(expense)*/
+       }
     }
+
+    //recommended to remove viewmodelscope as you are using suspend function
+     suspend fun UpdateExpense(userExpenditure: UserExpenditure){
+        viewModelScope.launch(Dispatchers.IO) {
+            expenseFireDb.getReference("Entertainment").setValue(userExpenditure.entertainment)
+            expenseFireDb.getReference("Food").setValue(userExpenditure.food)
+            expenseFireDb.getReference("Rent").setValue(userExpenditure.rent)
+            expenseFireDb.getReference("Travel").setValue(userExpenditure.travel)
+            expenseFireDb.getReference("MiscellaneousExpense").setValue(userExpenditure.miscellaneous)
+
+            var currentExpense = userExpenditure.entertainment + userExpenditure.food + userExpenditure.rent + userExpenditure.travel + userExpenditure.miscellaneous
+            userExpenditure.calcTotalExpense(expenseDao.getTotalExpense(),currentExpense)
+            expenseFireDb.getReference("TotalExpense").setValue(userExpenditure.getTotalExpenditure())
+            //updated in roomDB
+            expenseDao.updateTotalExpenses(userExpenditure.getTotalExpenditure())
+            _totalExpense.postValue(userExpenditure.getTotalExpenditure())
+
+        }
+    }
+    /*   private fun showToast(message : String){
+         viewModelScope.launch(Dispatchers.Main){
+             Toast.makeText(getApplication(),message,Toast.LENGTH_SHORT).show()
+         }
+     }
+ */
+
 }
