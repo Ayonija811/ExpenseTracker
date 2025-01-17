@@ -1,7 +1,7 @@
 package com.srivastava.expensetracker
 
 import android.app.Application
-import android.widget.Toast
+import android.util.Log
 import androidx.lifecycle.*
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -14,59 +14,75 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
     //Define DB object
     private val expenseDao : TotalExpenseDao = TotalExpenseDB.getDatabase(application).totalExpenseDao()
     private val expenseFireDb = FirebaseDatabase.getInstance()
+    private var isRoomDBEmpty : Boolean = true
 
     private val _totalExpense = MutableLiveData<Double>()
     val expenseValue : LiveData<Double> get() = _totalExpense
 
     init{
         //Create a check to ensure localDb and FirebaseDB data is consistent.
-        fetchTotalExpense()
+        isDatabaseEmpty{ isRowCountEmptyCheck ->
+            if(isRowCountEmptyCheck){
+                isRoomDBEmpty = true
+            }else{
+                isRoomDBEmpty = false
+                fetchTotalExpense()
+            }
+        }
     }
 
+    private fun isDatabaseEmpty(callback: (Boolean)-> Unit){
+        viewModelScope.launch(Dispatchers.IO){
+            callback(expenseDao.getRowCount() == 0)
+        }
+    }
     private fun fetchTotalExpense() {
        viewModelScope.launch(Dispatchers.IO){
+
            val totalExpenseRoom = expenseDao.getTotalExpense()
            val totalExpenseFire = expenseFireDb.getReference("TotalExpense")
 
            totalExpenseFire.addValueEventListener(object : ValueEventListener{
                override fun onDataChange(snapshot: DataSnapshot) {
                   val totalExpenseFireBase = snapshot.getValue(Double :: class.java)
+                   Log.d("Debug", "Firebase Total Expense : $totalExpenseFireBase")
+                   Log.d("Debug","Room Total Expense :  $totalExpenseRoom")
                    if(totalExpenseFireBase == totalExpenseRoom){
                        _totalExpense.postValue(totalExpenseRoom?: 0.0)
                    }
                }
                override fun onCancelled(error: DatabaseError) {
+                   Log.e("Firebase","Failed to fetch data: $(error.message)")
                }
            })
-
-         /*  val expense = Expenses(totalExpense = totalExpenseRoom ?: 0.0)
-           expenseDao.insertTotalExpense(expense)*/
        }
     }
 
     //recommended to remove viewmodelscope as you are using suspend function
      suspend fun UpdateExpense(userExpenditure: UserExpenditure){
         viewModelScope.launch(Dispatchers.IO) {
+            var currentExpense = userExpenditure.entertainment + userExpenditure.food + userExpenditure.rent + userExpenditure.travel + userExpenditure.miscellaneous
+            if(isRoomDBEmpty == true){
+                val primaryKey = 1
+                userExpenditure.updateTotalExpense(0.0,currentExpense)
+                val expenses = Expenses(primaryKey,userExpenditure.getTotalExpenditure())
+                expenseDao.insertTotalExpense(expenses)
+                isRoomDBEmpty = false
+            }else{
+                userExpenditure.updateTotalExpense(expenseDao.getTotalExpense(),currentExpense)
+                expenseDao.updateTotalExpenses(userExpenditure.getTotalExpenditure())
+            }
+            Log.d("DEBUG_VM: ","isRoomDBEmpty $isRoomDBEmpty,currentExpense $currentExpense, userExpenditure.getTotalExpenditure() ${userExpenditure.getTotalExpenditure()}")
+            //update all DBs
+            expenseFireDb.getReference("TotalExpense").setValue(userExpenditure.getTotalExpenditure())
             expenseFireDb.getReference("Entertainment").setValue(userExpenditure.entertainment)
             expenseFireDb.getReference("Food").setValue(userExpenditure.food)
             expenseFireDb.getReference("Rent").setValue(userExpenditure.rent)
             expenseFireDb.getReference("Travel").setValue(userExpenditure.travel)
             expenseFireDb.getReference("MiscellaneousExpense").setValue(userExpenditure.miscellaneous)
 
-            var currentExpense = userExpenditure.entertainment + userExpenditure.food + userExpenditure.rent + userExpenditure.travel + userExpenditure.miscellaneous
-            userExpenditure.calcTotalExpense(expenseDao.getTotalExpense(),currentExpense)
-            expenseFireDb.getReference("TotalExpense").setValue(userExpenditure.getTotalExpenditure())
-            //updated in roomDB
-            expenseDao.updateTotalExpenses(userExpenditure.getTotalExpenditure())
             _totalExpense.postValue(userExpenditure.getTotalExpenditure())
 
         }
     }
-    /*   private fun showToast(message : String){
-         viewModelScope.launch(Dispatchers.Main){
-             Toast.makeText(getApplication(),message,Toast.LENGTH_SHORT).show()
-         }
-     }
- */
-
 }

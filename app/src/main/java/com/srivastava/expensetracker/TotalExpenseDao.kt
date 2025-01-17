@@ -13,10 +13,10 @@ interface TotalExpenseDao {
     @Query("SELECT totalExpense FROM expenses")
     suspend fun getTotalExpense() : Double
 
-    @Query("UPDATE expenses SET totalExpense = :newAmount")
+    @Query("UPDATE expenses SET totalExpense = :newAmount ")
     suspend fun updateTotalExpenses(newAmount : Double)
 
-
-
+    @Query("SELECT COUNT(*) FROM expenses")
+    suspend fun getRowCount() : Int
 
 }

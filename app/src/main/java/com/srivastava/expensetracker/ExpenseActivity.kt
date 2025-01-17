@@ -51,5 +51,6 @@ class ExpenseActivity : AppCompatActivity() {
         viewModel.expenseValue.observe(this, Observer { totalExpense ->
             binding.tvTotalExpense.text = "Total Expense : $totalExpense"
         })
+
     }
 }
