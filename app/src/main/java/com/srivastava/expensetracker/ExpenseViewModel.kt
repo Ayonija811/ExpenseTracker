@@ -45,14 +45,11 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
            totalExpenseFire.addValueEventListener(object : ValueEventListener{
                override fun onDataChange(snapshot: DataSnapshot) {
                   val totalExpenseFireBase = snapshot.getValue(Double :: class.java)
-                   Log.d("Debug", "Firebase Total Expense : $totalExpenseFireBase")
-                   Log.d("Debug","Room Total Expense :  $totalExpenseRoom")
                    if(totalExpenseFireBase == totalExpenseRoom){
                        _totalExpense.postValue(totalExpenseRoom?: 0.0)
                    }
                }
                override fun onCancelled(error: DatabaseError) {
-                   Log.e("Firebase","Failed to fetch data: $(error.message)")
                }
            })
        }
@@ -72,7 +69,6 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
                 userExpenditure.updateTotalExpense(expenseDao.getTotalExpense(),currentExpense)
                 expenseDao.updateTotalExpenses(userExpenditure.getTotalExpenditure())
             }
-            Log.d("DEBUG_VM: ","isRoomDBEmpty $isRoomDBEmpty,currentExpense $currentExpense, userExpenditure.getTotalExpenditure() ${userExpenditure.getTotalExpenditure()}")
             //update all DBs
             expenseFireDb.getReference("TotalExpense").setValue(userExpenditure.getTotalExpenditure())
             expenseFireDb.getReference("Entertainment").setValue(userExpenditure.entertainment)

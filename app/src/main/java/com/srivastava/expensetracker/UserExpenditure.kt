@@ -68,7 +68,6 @@ class UserExpenditure{
     fun updateTotalExpense(prevTotalExpense : Double, newExpense : Double){
         //for production use this "requireNotNull(value) { "Value must not be null" } in place of assert(){}"
         assert(prevTotalExpense != null){"prevTotalExpense must not be null"}
-        Log.d("DEBUG_USEREXP: ","prevTotalExpense $prevTotalExpense newExpense $newExpense"  )
         this.totalExpense = prevTotalExpense + newExpense
 
     }
