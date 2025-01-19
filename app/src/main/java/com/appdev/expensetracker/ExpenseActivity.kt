@@ -1,4 +1,4 @@
-package com.srivastava.expensetracker
+package com.appdev.expensetracker
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle

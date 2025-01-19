@@ -1,4 +1,4 @@
-package com.srivastava.expensetracker
+package com.appdev.expensetracker
 
 import android.app.Application
 import androidx.lifecycle.*
